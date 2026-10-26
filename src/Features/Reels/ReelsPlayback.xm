@@ -2,18 +2,21 @@
 
 %hook IGSundialPlaybackControlsTestConfiguration
 - (id)initWithLauncherSet:(id)set
-                     tapToPauseEnabled:(_Bool)tapPauseEnabled
-      combineSingleTapPlaybackControls:(_Bool)controls
-        isVideoPreviewThumbnailEnabled:(_Bool)previewThumbEnabled
-                minScrubberDurationSec:(long long)minSec
-         seekResumeScrubberCooldownSec:(double)seekSec
-          tapResumeScrubberCooldownSec:(double)tapSec
-    persistentScrubberMinVideoDuration:(long long)duration
-        isScrubberForShortVideoEnabled:(_Bool)shortScrubberEnabled
+         tapToPauseEnabled:(_Bool)tapPauseEnabled
+ combineSingleTapPlaybackControls:(_Bool)controls
+    isVideoPreviewThumbnailEnabled:(_Bool)previewThumbEnabled
+            minScrubberDurationSec:(long long)minSec
+      seekResumeScrubberCooldownSec:(double)seekSec
+       tapResumeScrubberCooldownSec:(double)tapSec
+persistentScrubberMinVideoDuration:(long long)duration
+    isScrubberForShortVideoEnabled:(_Bool)shortScrubberEnabled
 {
     _Bool userTapPauseEnabled = tapPauseEnabled;
-    if ([[SCIUtils getStringPref:@"reels_tap_control"] isEqualToString:@"pause"]) userTapPauseEnabled = true;
-    else if ([[SCIUtils getStringPref:@"reels_tap_control"] isEqualToString:@"mute"]) userTapPauseEnabled = false;
+    if ([[SCIUtils getStringPref:@"reels_tap_control"] isEqualToString:@"pause"]) {
+        userTapPauseEnabled = true;
+    } else if ([[SCIUtils getStringPref:@"reels_tap_control"] isEqualToString:@"mute"]) {
+        userTapPauseEnabled = false;
+    }
 
     long long userMinSec = minSec;
     long long userDuration = duration;
@@ -33,21 +36,24 @@
     if ([SCIUtils getBoolPref:@"prevent_doom_scrolling"]) {
         IGRefreshControl *_refreshControl = MSHookIvar<IGRefreshControl *>(self, "_refreshControl");
         [self refreshControlDidEndFinishLoadingAnimation:_refreshControl];
-
         return;
     }
 
     if ([SCIUtils getBoolPref:@"refresh_reel_confirm"]) {
         NSLog(@"[SCInsta] Reel refresh triggered");
         
-        [SCIUtils showConfirmation:^(void) { %orig(arg1, arg2); }
+        void (^confirmBlock)(void) = ^{
+            %orig(arg1, arg2);
+        };
+        
+        [SCIUtils showConfirmation:confirmBlock
                      cancelHandler:^(void) {
                          IGRefreshControl *_refreshControl = MSHookIvar<IGRefreshControl *>(self, "_refreshControl");
                          [self refreshControlDidEndFinishLoadingAnimation:_refreshControl];
                      }
                              title:@"Refresh Reels"];
     } else {
-        return %orig(arg1, arg2);
+        %orig(arg1, arg2);
     }
 }
 %end
